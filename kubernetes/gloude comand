@@ -1,0 +1,18 @@
+gcloud compute scp --recurse \
+    --zone "us-central1-c" \
+    instance-20251216-071838:/home/payeldiu/docker_ccc \
+    ~/Documents \
+    --project "fluent-ego-481217-e8"
+
+
+gcloud compute ssh --zone "us-central1-c" "instance-20260117-134706" --project "fluent-ego-481217-e8"
+
+
+sudo kubeadm init \
+  --apiserver-advertise-address=10.128.0.4 \
+  --pod-network-cidr=192.168.0.0/16 \
+  --cri-socket /run/containerd/containerd.sock \
+  --ignore-preflight-errors=Swap
+
+
+sudo kubeadm join 10.128.0.4:6443 --token 4plfmh.oj21gs62331rpix8 --discovery-token-ca-cert-hash sha256:b35d50024e6937b9a24628fb906c17c90e441958f89b9fa92afbe1b5d63fd18e
