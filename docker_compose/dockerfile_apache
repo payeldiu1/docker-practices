@@ -1,0 +1,33 @@
+FROM php:8.2-apache
+
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
+
+# Install system dependencies for PHP extensions
+RUN apt-get update && apt-get install -y \
+    libzip-dev \
+    libonig-dev \
+    libxml2-dev \
+    pkg-config \
+    default-mysql-client \
+    default-libmysqlclient-dev \
+    && docker-php-ext-install mysqli pdo pdo_mysql mbstring \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add Apache virtual host configuration
+RUN echo "<VirtualHost *:80>\n\
+    DocumentRoot /var/www/html\n\
+    \n\
+    <Directory /var/www/html>\n\
+        Options Indexes FollowSymLinks\n\
+        AllowOverride All\n\
+        Require all granted\n\
+    </Directory>\n\
+</VirtualHost>" > /etc/apache2/sites-available/000-default.conf
+
+# Fix ownership and permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
+
+WORKDIR /var/www/html
+

@@ -1,0 +1,53 @@
+services:
+  nginx:
+    build: ./nginx
+    image: payeldiu/my-nginx:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - php
+      - mysqldb
+    networks:
+      - quickops_network
+    
+  php:
+    build: ./php
+    image: payeldiu/my-php-fpm:latest
+    networks:
+      - quickops_network
+    
+
+  mysqldb:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppass
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - quickops_network
+  
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    environment:
+      PMA_HOST: mysqldb
+      PMA_USER: appuser
+      PMA_PASSWORD: apppass
+    ports:
+      - "8080:80"   # Access phpMyAdmin at http://localhost:8080
+    depends_on:
+      - mysqldb
+    networks:
+      - quickops_network
+    
+
+networks:
+  quickops_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+
