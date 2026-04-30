@@ -156,7 +156,7 @@ vim requirements.txt
 fastapi
 uvicorn
 exchangelib
-requests_ntlmn
+requests_ntlm
 
 🐳 Step 2: Create Dockerfile
 FROM python:3.11-slim
