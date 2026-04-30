@@ -1,0 +1,118 @@
+-- FastAPI
+-- Build the image Dev PC and transfer to Production Server.
+-- Not required Internet in Server
+🚀 Step 1: Create FastAPI project (on Dev PC)
+
+Create a folder:
+
+mkdir fastapi-app
+cd fastapi-app
+🔹 main.py
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "FastAPI is working!"}
+
+@app.get("/hello/{name}")
+def say_hello(name: str):
+    return {"message": f"Hello {name}"}
+
+🐳Create requirements.txt
+
+vim requirements.txt
+
+fastapi
+uvicorn
+
+🐳 Step 2: Create Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+🔨 Step 3: Build Docker Image (Dev PC)
+docker build -t fastapi-app:latest .
+
+Test locally:
+
+docker run -p 8000:8000 fastapi-app
+
+Open:
+
+http://localhost:8000
+
+
+
+
+🚀 1. Build Image (Dev PC)
+
+Inside your FastAPI project folder:
+
+docker build -t self-hosted-ai-starter-kit-fastapi:latest .
+
+Verify:
+
+docker images
+
+You should see:
+
+self-hosted-ai-starter-kit-fastapi   latest
+📦 2. Save Image to File
+
+Export it as .tar:
+
+docker save -o self-hosted-ai-starter-kit-fastapi.tar self-hosted-ai-starter-kit-fastapi:latest
+
+3. Transfer to Server
+Using SCP:
+scp self-hosted-ai-starter-kit-fastapi.tar user@server:/home/user/
+
+OR use:
+
+WinSCP
+USB drive
+shared folder
+
+
+📥 4. Load Image (Server)
+
+SSH into your server:
+
+docker load -i self-hosted-ai-starter-kit-fastapi.tar
+
+Check:
+
+docker images
+
+
+5. Run Container
+docker run -d -p 8000:8000 \
+  --name fastapi-service \
+  self-hosted-ai-starter-kit-fastapi:latest
+
+or Add the below in docker compose.yaml at the end
+
+fastapi:
+    image: self-hosted-ai-starter-kit-fastapi:latest
+    container_name: fastapi
+    hostname: fastapi
+    networks: ['demo']
+    restart: unless-stopped
+    ports:
+      - 8000:8000   # optional (remove in production if using proxy)
+
+
+🌐 6. Test API
+
+Open:
+
+http://server-ip:8000
+
