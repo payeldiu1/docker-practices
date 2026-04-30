@@ -20,12 +20,143 @@ def read_root():
 def say_hello(name: str):
     return {"message": f"Hello {name}"}
 
+
+--------------
+to integrate EWS
+
+from fastapi import FastAPI, HTTPException
+from exchangelib import Credentials, Account, Configuration, DELEGATE
+from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
+from datetime import datetime, timedelta
+
+# ⚠️ Disable SSL verification (only for internal/self-signed certs)
+BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
+
+app = FastAPI(title="Exchange Email API")
+
+# 🔐 Config (move to .env in production)
+USERNAME = "your_username"
+PASSWORD = "your_password"
+EMAIL = "user@yourdomain.com"
+EWS_URL = "https://your-exchange-server/EWS/Exchange.asmx"
+
+
+def get_account():
+    credentials = Credentials(username=USERNAME, password=PASSWORD)
+    config = Configuration(service_endpoint=EWS_URL, credentials=credentials)
+
+    account = Account(
+        primary_smtp_address=EMAIL,
+        config=config,
+        autodiscover=False,
+        access_type=DELEGATE
+    )
+    return account
+
+
+# ✅ Health check
+@app.get("/")
+def health():
+    return {"status": "Exchange API is running"}
+
+
+# ✅ Get latest emails
+@app.get("/emails")
+def get_emails(limit: int = 10):
+    try:
+        account = get_account()
+        emails = []
+
+        for item in account.inbox.all().order_by('-datetime_received')[:limit]:
+            emails.append({
+                "subject": item.subject,
+                "from": item.sender.email_address if item.sender else None,
+                "received": item.datetime_received,
+                "body": str(item.text_body)[:500] if item.text_body else None
+            })
+
+        return {"count": len(emails), "data": emails}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ✅ Get unread emails
+@app.get("/emails/unread")
+def get_unread():
+    try:
+        account = get_account()
+        emails = []
+
+        for item in account.inbox.filter(is_read=False):
+            emails.append({
+                "subject": item.subject,
+                "from": item.sender.email_address if item.sender else None,
+                "received": item.datetime_received
+            })
+
+        return {"count": len(emails), "data": emails}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ✅ Get emails from last N hours
+@app.get("/emails/recent")
+def get_recent(hours: int = 24):
+    try:
+        account = get_account()
+        since = datetime.now() - timedelta(hours=hours)
+
+        emails = []
+        for item in account.inbox.filter(datetime_received__gte=since):
+            emails.append({
+                "subject": item.subject,
+                "from": item.sender.email_address if item.sender else None,
+                "received": item.datetime_received
+            })
+
+        return {"count": len(emails), "data": emails}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ✅ Mark email as read (by subject match - simple example)
+@app.post("/emails/mark-read")
+def mark_as_read(subject: str):
+    try:
+        account = get_account()
+
+        items = account.inbox.filter(subject=subject, is_read=False)
+        count = 0
+
+        for item in items:
+            item.is_read = True
+            item.save()
+            count += 1
+
+        return {"message": f"{count} emails marked as read"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+----------------------
+
+
+
+
+
+
 🐳Create requirements.txt
 
 vim requirements.txt
 
 fastapi
 uvicorn
+exchangelib
+requests_ntlmn
 
 🐳 Step 2: Create Dockerfile
 FROM python:3.11-slim
