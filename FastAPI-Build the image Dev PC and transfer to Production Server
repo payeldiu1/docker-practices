@@ -187,7 +187,7 @@ http://localhost:8000
 
 Inside your FastAPI project folder:
 
-docker build -t self-hosted-ai-starter-kit-fastapi:latest .
+docker build -t fastapi:latest .
 
 Verify:
 
@@ -200,11 +200,11 @@ self-hosted-ai-starter-kit-fastapi   latest
 
 Export it as .tar:
 
-docker save -o self-hosted-ai-starter-kit-fastapi.tar self-hosted-ai-starter-kit-fastapi:latest
+docker save -o fastapi.tar fastapi:latest
 
 3. Transfer to Server
 Using SCP:
-scp self-hosted-ai-starter-kit-fastapi.tar user@server:/home/user/
+scp fastapi.tar user@server:/home/user/
 
 OR use:
 
@@ -217,7 +217,7 @@ shared folder
 
 SSH into your server:
 
-docker load -i self-hosted-ai-starter-kit-fastapi.tar
+docker load -i fastapi.tar
 
 Check:
 
@@ -227,12 +227,12 @@ docker images
 5. Run Container
 docker run -d -p 8000:8000 \
   --name fastapi-service \
-  self-hosted-ai-starter-kit-fastapi:latest
+  fastapi:latest
 
 or Add the below in docker compose.yaml at the end
 
 fastapi:
-    image: self-hosted-ai-starter-kit-fastapi:latest
+    image: fastapi:latest
     container_name: fastapi
     hostname: fastapi
     networks: ['demo']
