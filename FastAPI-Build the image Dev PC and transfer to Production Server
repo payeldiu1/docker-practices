@@ -238,6 +238,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
 🔨 Step 3: Build Docker Image (Dev PC)
 docker build -t fastapi-app:latest .
 
@@ -264,7 +265,8 @@ docker images
 
 You should see:
 
-self-hosted-ai-starter-kit-fastapi   latest
+fastapi   latest
+
 📦 2. Save Image to File
 
 Export it as .tar:
