@@ -122,8 +122,8 @@ def get_recent(hours: int = 24):
         raise HTTPException(status_code=500, detail=str(e))
 
 #✅ multiple keyword search (like Gmail)
-# mode or GET /emails/unread?keywords=transfer,posting,liability
-#mode and GET /emails/unread?keywords=transfer,posting&mode=and
+# mode or GET /emails/unread_search?keywords=transfer,posting,liability
+#mode and GET /emails/unread_search?keywords=transfer,posting&mode=and
 @app.get("/emails/unread_search")
 def get_unread(
     keywords: str = Query(None, description="Comma-separated keywords"),
