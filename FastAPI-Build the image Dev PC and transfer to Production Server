@@ -219,6 +219,7 @@ def reply_email(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 # ✅ Mark email as read (by subject match - simple example)
 @app.post("/emails/mark-read")
 def mark_as_read(subject: str):
