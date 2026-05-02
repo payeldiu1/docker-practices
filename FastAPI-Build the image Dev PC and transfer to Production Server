@@ -121,6 +121,75 @@ def get_recent(hours: int = 24):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+#✅ multiple keyword search (like Gmail)
+# mode or GET /emails/unread?keywords=transfer,posting,liability
+#mode and GET /emails/unread?keywords=transfer,posting&mode=and
+@app.get("/emails/unread_search")
+def get_unread(
+    keywords: str = Query(None, description="Comma-separated keywords"),
+    mode: str = Query("or", description="Search mode: and/or"),
+    limit: int = 50
+):
+    try:
+        account = get_account()
+
+        # Normalize keywords
+        keyword_list = []
+        if keywords:
+            keyword_list = [k.strip().lower() for k in keywords.split(",") if k.strip()]
+
+        emails = []
+
+        # ✅ AND mode → server-side filtering (FAST)
+        if keyword_list and mode.lower() == "and":
+            query = account.inbox.filter(is_read=False)
+
+            for word in keyword_list:
+                query = query.filter(subject__icontains=word)
+
+            items = query.order_by('-datetime_received')[:limit]
+
+            for item in items:
+                emails.append({
+                    "subject": item.subject,
+                    "from": item.sender.email_address if item.sender else None,
+                    "received": item.datetime_received
+                })
+
+        # ✅ OR mode → client-side filtering (FLEXIBLE)
+        else:
+            items = account.inbox.filter(is_read=False).order_by('-datetime_received')[:limit * 2]
+
+            for item in items:
+                subject = (item.subject or "").lower()
+
+                if not keyword_list:
+                    match = True
+                elif mode.lower() == "or":
+                    match = any(k in subject for k in keyword_list)
+                else:
+                    match = all(k in subject for k in keyword_list)
+
+                if match:
+                    emails.append({
+                        "subject": item.subject,
+                        "from": item.sender.email_address if item.sender else None,
+                        "received": item.datetime_received
+                    })
+
+                if len(emails) >= limit:
+                    break
+
+        return {
+            "mode": mode,
+            "keywords": keyword_list,
+            "count": len(emails),
+            "data": emails
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # ✅ Mark email as read (by subject match - simple example)
 @app.post("/emails/mark-read")
