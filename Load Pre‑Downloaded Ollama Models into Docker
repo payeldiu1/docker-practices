@@ -1,0 +1,19 @@
+
+Load Pre‑Downloaded Ollama Models into Docker
+Copy tarball into container
+
+bash
+docker cp /home/appadmin/Ollama/ollama-models_20260428.tar.gz ollama:/root/
+(Replace ollama with your container name if different.)
+
+Extract inside container
+
+bash
+docker exec -it ollama bash -c "tar -xzvf /root/ollama-models_20260428.tar.gz -C /root/.ollama"
+This unpacks the models/ directory into Ollama’s storage path.
+
+Verify models
+
+bash
+docker exec -it ollama ollama list
+You should see llama3.2, qwen2.5, nomic-embed-text, bge-m3, etc.
