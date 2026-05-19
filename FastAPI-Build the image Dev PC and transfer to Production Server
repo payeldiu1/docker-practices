@@ -29,16 +29,19 @@ from exchangelib import Credentials, Account, Configuration, DELEGATE
 from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
 from datetime import datetime, timedelta
 
+from exchangelib.items import Message
+from exchangelib.properties import ItemId
+
 # ⚠️ Disable SSL verification (only for internal/self-signed certs)
 BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
 
 app = FastAPI(title="Exchange Email API")
 
 # 🔐 Config (move to .env in production)
-USERNAME = "your_username"
-PASSWORD = "your_password"
-EMAIL = "user@yourdomain.com"
-EWS_URL = "https://your-exchange-server/EWS/Exchange.asmx"
+USERNAME = "mr111802"
+PASSWORD = "Canada!!!!123"
+EMAIL = "mr111802@primebank.com.bd"
+EWS_URL = "https://webmail.primebank.com.bd/EWS/Exchange.asmx"
 
 
 def get_account():
@@ -121,9 +124,10 @@ def get_recent(hours: int = 24):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 #✅ multiple keyword search (like Gmail)
-# mode or GET /emails/unread_search?keywords=transfer,posting,liability
-#mode and GET /emails/unread_search?keywords=transfer,posting&mode=and
+# mode or GET /emails/unread?keywords=transfer,posting,liability
+#mode and GET /emails/unread?keywords=transfer,posting&mode=and
 @app.get("/emails/unread_search")
 def get_unread(
     keywords: str = Query(None, description="Comma-separated keywords"),
@@ -151,9 +155,12 @@ def get_unread(
 
             for item in items:
                 emails.append({
+                    "id": item.id,  # 🔑 Unique message ID
                     "subject": item.subject,
                     "from": item.sender.email_address if item.sender else None,
-                    "received": item.datetime_received
+                    "received": item.datetime_received,
+                    "changekey": item.changekey,
+                    "body": item.text_body or item.body or ""  # 📩 Plain text body fallback
                 })
 
         # ✅ OR mode → client-side filtering (FLEXIBLE)
@@ -172,9 +179,11 @@ def get_unread(
 
                 if match:
                     emails.append({
+                        "id": item.id,  # 🔑 Unique message ID
                         "subject": item.subject,
                         "from": item.sender.email_address if item.sender else None,
-                        "received": item.datetime_received
+                        "received": item.datetime_received,
+                        "body": item.text_body or item.body or ""  # 📩 Plain text body fallback
                     })
 
                 if len(emails) >= limit:
@@ -190,27 +199,83 @@ def get_unread(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-#✅ Email Reply API
-#from fastapi import FastAPI, HTTPException, Body
+#✅ Email Reply API by message 
 
 @app.post("/emails/reply")
-def reply_email(
-    subject: str = Body(...),
+def reply_email_msg_id(
+    message_id: str = Body(...),
     body: str = Body(...),
-    to_email: str = Body(...),
 ):
     try:
         account = get_account()
 
-        # Create reply message
-        message = account.drafts.create_reply(
-            subject=subject,
-            body=body,
-            to_recipients=[to_email]
+        # ✅ Fetch the original message by ID
+        original_message = account.inbox.get(message_id)
+
+        if not original_message:
+            raise HTTPException(status_code=404, detail="Message not found")
+
+        # ✅ Create a reply to that message
+        reply = original_message.create_reply()
+        reply.body = body
+
+        # ✅ Send and save the reply
+        reply.send_and_save_copy()
+
+        return {
+            "status": "success",
+            "message": f"Reply sent successfully to message ID {message_id}"
+        }
+
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+#✅ Email Reply API by message id and change key
+
+""" sample request
+{
+  "id": "AAMkAGI2...AAA=",
+  "changekey": "CQAAABYAA...",
+  "body": "Thank you for your email. We are checking the matter."
+}"""
+
+from fastapi import HTTPException
+from pydantic import BaseModel
+from exchangelib.items import Message
+from exchangelib.properties import ItemId
+
+
+class ReplyRequest(BaseModel):
+    id: str
+    changekey: str
+    body: str
+
+
+@app.post("/emails/reply")
+def reply_email(payload: ReplyRequest):
+    try:
+        account = get_account()
+
+        # Bind original message
+        original_message = Message.bind(
+            account=account,
+            item_id=ItemId(
+                id=payload.id,
+                changekey=payload.changekey
+            )
         )
 
-        # Send email
-        message.send_and_save()
+        # Create reply
+        reply = original_message.create_reply()
+
+        # Set reply body
+        reply.body = payload.body
+
+        # Send reply
+        reply.send_and_save_copy()
 
         return {
             "status": "success",
@@ -220,24 +285,47 @@ def reply_email(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ✅ Mark email as read (by subject match - simple example)
-@app.post("/emails/mark-read")
-def mark_as_read(subject: str):
+
+# # ✅ Mark email as read (by message id:chnage key)
+# sample input GET http://localhost:8000/emails/mark-read/AAMkAGI2...AAA=:CQAAABYAA
+
+
+@app.get("/emails/mark-read/{message_id}")
+def mark_as_read(message_id: str):
     try:
         account = get_account()
 
-        items = account.inbox.filter(subject=subject, is_read=False)
-        count = 0
+        # Expected format:
+        # message_id = "ITEMID:CHANGEKEY"
 
-        for item in items:
-            item.is_read = True
-            item.save()
-            count += 1
+        if ":" not in message_id:
+            raise HTTPException(
+                status_code=400,
+                detail="message_id must contain id:changekey"
+            )
 
-        return {"message": f"{count} emails marked as read"}
+        item_id, change_key = message_id.split(":", 1)
+
+        # Bind message properly
+        item = Message.bind(
+            account=account,
+            item_id=ItemId(id=item_id, changekey=change_key)
+        )
+
+        # Mark as read
+        item.is_read = True
+        item.save(update_fields=["is_read"])
+
+        return {
+            "status": "success",
+            "message": "Email marked as read"
+        }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
 
 
 ----------------------
