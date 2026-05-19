@@ -364,7 +364,7 @@ You should see:
 fastapi   latest
 
 📦 2. Save Image to File
-
+cd /root/.openclaw/workspace/self-hosted-ai-starter-kit
 Export it as .tar:
 
 docker save -o self-hosted-ai-starter-kit-fastapi.tar self-hosted-ai-starter-kit-fastapi
