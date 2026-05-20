@@ -274,10 +274,10 @@ def mark_as_read(message_id: str):
 
         item_id, change_key = message_id.split(":", 1)
 
-        # Bind message properly
-        item = Message.bind(
-            account=account,
-            item_id=ItemId(id=item_id, changekey=change_key)
+       # Get message directly from inbox
+        item = account.inbox.get(
+            id=item_id,
+            changekey=change_key
         )
 
         # Mark as read
