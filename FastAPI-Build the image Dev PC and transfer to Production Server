@@ -39,7 +39,7 @@ app = FastAPI(title="Exchange Email API")
 
 # 🔐 Config (move to .env in production)
 USERNAME = "mr111802"
-PASSWORD = "Canada!!!!123"
+PASSWORD = "XXXXX"
 EMAIL = "mr111802@primebank.com.bd"
 EWS_URL = "https://webmail.primebank.com.bd/EWS/Exchange.asmx"
 
