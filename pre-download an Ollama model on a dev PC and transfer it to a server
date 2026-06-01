@@ -1,0 +1,34 @@
+pre-download an Ollama model on a dev PC and transfer it to a server
+
+📍 1. Find model storage on dev PC
+Linux / Docker / WSL:
+~/.ollama/models
+Docker (common path inside container):
+/root/.ollama/models
+
+
+📁 3. Stop Ollama (important)
+systemctl stop ollama
+
+or Docker:
+
+docker stop ollama
+
+4. Copy models to server
+
+You can also archive models:
+
+tar -czf ollama-models.tar.gz ~/.ollama/models
+
+Then transfer:
+
+scp ollama-models.tar.gz user@server:/root/
+
+5. On server start Ollama
+ollama list
+
+If everything is correct, model will appear immediately.
+
+Extract on server:
+
+tar -xzf ollama-models.tar.gz -C ~/.ollama/
