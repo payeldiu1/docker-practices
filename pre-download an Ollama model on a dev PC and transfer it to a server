@@ -37,7 +37,8 @@ docker stop ollama
 
 You can also archive models:
 
-tar -czf ollama-models.tar.gz ~/.ollama/models
+sudo tar -czvf ollama-models.tar.gz \
+/var/lib/docker/volumes/self-hosted-ai-starter-kit_ollama_storage/_data
 
 Then transfer:
 
