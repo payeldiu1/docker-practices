@@ -50,5 +50,7 @@ ollama list
 If everything is correct, model will appear immediately.
 
 Extract on server:
+sudo tar -xzvf /tmp/ollama-models.tar.gz \
+-C /var/lib/docker/volumes/ollama_storage/_data
 
 tar -xzf ollama-models.tar.gz -C ~/.ollama/
