@@ -1,10 +1,29 @@
 pre-download an Ollama model on a dev PC and transfer it to a server
 
 📍 1. Find model storage on dev PC
-Linux / Docker / WSL:
-~/.ollama/models
-Docker (common path inside container):
-/root/.ollama/models
+docker volume  ls
+DRIVER    VOLUME NAME
+local     self-hosted-ai-starter-kit_n8n_storage
+local     self-hosted-ai-starter-kit_ollama_storage
+local     self-hosted-ai-starter-kit_postgres_storage
+local     self-hosted-ai-starter-kit_qdrant_storage
+root@vmi3224270:~/.openclaw/workspace/self-hosted-ai-starter-kit# docker volume inspect self-hosted-ai-starter-kit_ollama_storage
+[
+    {
+        "CreatedAt": "2026-04-12T11:45:41+02:00",
+        "Driver": "local",
+        "Labels": {
+            "com.docker.compose.config-hash": "0d94d8c9386dead0c9204ef21f9a6fc259312b9d7ce89df954e79d69dbd6a710",
+            "com.docker.compose.project": "self-hosted-ai-starter-kit",
+            "com.docker.compose.version": "5.1.2",
+            "com.docker.compose.volume": "ollama_storage"
+        },
+        "Mountpoint": "/var/lib/docker/volumes/self-hosted-ai-starter-kit_ollama_storage/_data",
+        "Name": "self-hosted-ai-starter-kit_ollama_storage",
+        "Options": null,
+        "Scope": "local"
+    }
+]
 
 
 📁 3. Stop Ollama (important)
