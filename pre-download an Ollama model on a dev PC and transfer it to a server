@@ -40,9 +40,14 @@ You can also archive models:
 sudo tar -czvf ollama-models.tar.gz \
 /var/lib/docker/volumes/self-hosted-ai-starter-kit_ollama_storage/_data
 
+
+
 Then transfer:
 
 scp ollama-models.tar.gz user@server:/root/
+
+from windows: 
+scp C:\Users\mr111802\Documents\ollama\ollama-models.tar.gz appadmin@192.168.202.168:/app/ollama/ollama-models.tar.gz
 
 5. On server start Ollama
 ollama list
