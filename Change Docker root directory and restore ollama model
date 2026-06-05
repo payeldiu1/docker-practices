@@ -1,0 +1,95 @@
+✅ Fix: Change Docker root directory
+1. Stop Docker service
+sudo systemctl stop docker
+ 
+2. Create new directory (if not exists)
+sudo mkdir -p /app/docker
+Set correct permissions:
+sudo chown root:root /app/docker
+
+3. Move existing Docker data (IMPORTANT if you have containers/images)
+sudo rsync -aP /var/lib/docker/ /app/docker/
+
+or 
+
+sudo cp -a /var/lib/docker/. /app/docker/
+
+4. Configure Docker daemon
+Edit or create this file:
+sudo nano /etc/docker/daemon.json
+Add:
+{
+  "data-root": "/app/docker"
+}
+ 
+5. Start Docker again
+sudo systemctl start docker
+ 
+6. Verify
+docker info | grep "Docker Root Dir"
+You should see:
+Docker Root Dir: /app/docker
+ 
+Check location used space
+sudo du -sh /var/lib/docker
+sudo du -sh /app/docker
+sudo du -sh /var/lib/containerd
+
+Optional cleanup (after confirming everything works)
+sudo rm -rf /var/lib/docker
+
+
+✅  Pre download ollama model restore into the server
+
+1. Find model storage on dev PC
+docker volume  ls
+DRIVER    VOLUME NAME
+local     self-hosted-ai-starter-kit_n8n_storage
+local     self-hosted-ai-starter-kit_ollama_storage
+local     self-hosted-ai-starter-kit_postgres_storage
+local     self-hosted-ai-starter-kit_qdrant_storage
+
+📁 3. Stop Ollama (important)
+systemctl stop ollama
+
+or Docker:
+
+docker stop ollama
+
+4. Copy models to server
+
+You can also archive models:
+
+Cd /app/
+
+sudo tar -czvf ollama-models.tar.gz \
+/var/lib/docker/volumes/self-hosted-ai-starter-kit_ollama_storage/_data
+
+
+Then transfer:
+
+scp ollama-models.tar.gz user@server:/app/
+
+from windows: 
+scp C:\Users\mr111802\Documents\ollama\ollama-models.tar.gz appadmin@192.168.202.168:/app/ollama/ollama-models.tar.gz
+
+5. On server start Ollama
+ollama list
+docker exec -it ollama ollama list
+
+If everything is correct, model will appear immediately.
+
+Extract the model into Server
+cd /app/docker/volumes/self-hosted-ai-starter-kit_ollama_storage/_data
+
+rm -rf *
+
+sudo tar -xzvf ollama-models_20260428.tar.gz \
+-C /app/docker/volumes/self-hosted-ai-starter-kit_ollama_storage/_data
+
+Verify
+docker exec -it ollama ollama list
+
+
+
+
